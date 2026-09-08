@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module configVersion="1.2">
+
+    <!-- Module Properties -->
+    <id>${project.parent.artifactId}</id>
+    <name>${project.parent.name}</name>
+    <version>${project.parent.version}</version>
+    <package>${project.parent.groupId}.${project.parent.artifactId}</package>
+    <author>OpenMRS</author>
+    <description>${project.parent.description}</description>
+    <require_version>${openMRSVersion}</require_version>
+    <!-- / Module Properties -->
+
+    <!-- This module only contributes to datafilter's extension points (a filters/hibernate/*.json
+         registration and a DataFilterListener bean), both discovered by datafilter across every
+         module's classpath, so no activator or explicit Spring wiring is needed here. -->
+
+    <require_modules>
+        <require_module version="${datafilterVersion}">org.openmrs.module.datafilter</require_module>
+    </require_modules>
+
+    <!-- Global properties -->
+    <globalProperty>
+        <property>${project.parent.artifactId}.userProperty</property>
+        <defaultValue>allowed_location</defaultValue>
+        <description>
+            The name of the user property read by allowedlocation_allowedLocationFilter, its value is
+            expected to be a comma separated list of location uuids, location names are also accepted.
+            Note that this filter is ANDed with datafilter's own datafilter_locationFilter when both
+            are enabled, so set datafilter_locationFilter.disabled to true on the datafilter module to
+            drive location access from this property alone instead of from datafilter's
+            datafilter_entity_basis_map table.
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>${project.parent.artifactId}.includeDescendants</property>
+        <defaultValue>true</defaultValue>
+        <description>
+            When the value is set to true, the child locations of each location listed in the user
+            property are accessible too, at all levels of nesting. This matches how the bases assigned
+            in datafilter's datafilter_entity_basis_map table are expanded, so a user can be granted a
+            district and get every facility beneath it.
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <property>${project.parent.artifactId}.unrestrictedWhenUnset</property>
+        <defaultValue>true</defaultValue>
+        <description>
+            When the value is true, which is the default, a user with no value for the user property is
+            not restricted at all, so installing this module does not change what existing users can
+            see until they are actually given the property. Set it to false once every user has one, to
+            make the filter fail closed, at which point a user without the property is granted access
+            to no locations at all and has nothing to pick from at login.
+        </description>
+    </globalProperty>
+
+</module>

@@ -1,0 +1,33 @@
+[
+    {
+        /*
+        Restricts org.openmrs.Location to the set of locations listed in the authenticated user's
+        "allowed_location" user property (see AllowedLocationFilterListener). This governs every
+        query for locations, which includes the login location picker.
+
+        datafilter discovers this file across every module's classpath (classpath*:/filters/hibernate/
+        *.json using OpenmrsClassLoader), the same way it discovers its own built-in registrations, so
+        no changes to the datafilter module itself are needed for this to take effect.
+
+        This filter does NOT read datafilter_entity_basis_map, so it needs no per-user grant rows in
+        that table. It is independent of datafilter's own datafilter_locationFilter and the two are
+        ANDed if both are enabled, so a deployment is expected to disable one of them, see the
+        allowedlocation.userProperty global property's description for how.
+
+        Parameters:
+            allowedLocationIds: the location ids resolved from the user property, plus their
+                                descendants unless allowedlocation.includeDescendants is false. Never
+                                empty, an unmatchable id is used when the user is allowed nothing so
+                                that the filter fails closed.
+        */
+        "name": "allowedlocation_allowedLocationFilter",
+        "targetClasses": ["org.openmrs.Location"],
+        "condition": "location_id IN (:allowedLocationIds)",
+        "parameters": [
+            {
+                "name": "allowedLocationIds",
+                "type": "string"
+            }
+        ]
+    }
+]
