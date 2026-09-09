@@ -8,12 +8,16 @@
     <package>${project.parent.groupId}.${project.parent.artifactId}</package>
     <author>OpenMRS</author>
     <description>${project.parent.description}</description>
+    <updateURL>https://modules.openmrs.org/modules/download/${project.parent.artifactId}/update.rdf</updateURL>
     <require_version>${openMRSVersion}</require_version>
     <!-- / Module Properties -->
 
+    <!-- Module Activator -->
+    <activator>${project.parent.groupId}.${project.parent.artifactId}.AllowedLocationActivator</activator>
+
     <!-- This module only contributes to datafilter's extension points (a filters/hibernate/*.json
          registration and a DataFilterListener bean), both discovered by datafilter across every
-         module's classpath, so no activator or explicit Spring wiring is needed here. -->
+         module's classpath, so the activator above does nothing beyond logging start/stop. -->
 
     <require_modules>
         <require_module version="${datafilterVersion}">org.openmrs.module.datafilter</require_module>
