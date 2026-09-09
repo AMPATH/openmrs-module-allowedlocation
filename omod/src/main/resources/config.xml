@@ -30,10 +30,6 @@
         <description>
             The name of the user property read by allowedlocation_allowedLocationFilter, its value is
             expected to be a comma separated list of location uuids, location names are also accepted.
-            Note that this filter is ANDed with datafilter's own datafilter_locationFilter when both
-            are enabled, so set datafilter_locationFilter.disabled to true on the datafilter module to
-            drive location access from this property alone instead of from datafilter's
-            datafilter_entity_basis_map table.
         </description>
     </globalProperty>
     <globalProperty>
@@ -55,6 +51,31 @@
             see until they are actually given the property. Set it to false once every user has one, to
             make the filter fail closed, at which point a user without the property is granted access
             to no locations at all and has nothing to pick from at login.
+        </description>
+    </globalProperty>
+    <globalProperty>
+        <!--
+            Belongs to datafilter's own naming convention (module_id + filter name + ".disabled"), not
+            this module's, but global properties aren't namespace enforced: whichever module's
+            config.xml is processed first seeds the default if the row doesn't already exist. This
+            module's own filter and datafilter's datafilter_locationFilter both restrict
+            org.openmrs.Location and are ANDed together if both are enabled. Since this module drives
+            access from the allowed_location user property rather than datafilter's
+            datafilter_entity_basis_map table, a user with no rows in that table would otherwise be
+            restricted to zero locations by datafilter's filter regardless of what this module resolves.
+            Seeding this default to true here means a fresh install of this module Just Works without
+            an admin having to separately go find and disable datafilter's own filter by hand, without
+            requiring any change to datafilter itself. An admin who deliberately wants both filters
+            ANDed (e.g. basis map grants as a hard ceiling on top of the user property) can still flip
+            this back to false, this only seeds the default, it does not enforce the value.
+        -->
+        <property>datafilter_locationFilter.disabled</property>
+        <defaultValue>true</defaultValue>
+        <description>
+            Seeded to true by ${project.parent.name} on install so that datafilter's own basis map
+            based location filter does not get ANDed with allowedlocation_allowedLocationFilter, see
+            this property's comment in ${project.parent.artifactId}'s config.xml for why. Set to false
+            if you deliberately want both filters enforced together.
         </description>
     </globalProperty>
 
