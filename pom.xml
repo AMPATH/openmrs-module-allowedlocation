@@ -154,4 +154,25 @@
         </pluginRepository>
     </pluginRepositories>
 
+    <profiles>
+        <!-- Deploy target for the publish-github-packages workflow. AMRS consumes every
+             AMPATH built module from the one openmrs-content-amrs package feed, so this
+             module deploys there rather than to its own repository's feed. -->
+        <profile>
+            <id>github-packages</id>
+            <distributionManagement>
+                <repository>
+                    <id>O3-amrs</id>
+                    <name>AMRS GitHub</name>
+                    <url>https://maven.pkg.github.com/AMPATH/openmrs-content-amrs</url>
+                </repository>
+                <snapshotRepository>
+                    <id>O3-amrs</id>
+                    <name>AMRS GitHub</name>
+                    <url>https://maven.pkg.github.com/AMPATH/openmrs-content-amrs</url>
+                </snapshotRepository>
+            </distributionManagement>
+        </profile>
+    </profiles>
+
 </project>
