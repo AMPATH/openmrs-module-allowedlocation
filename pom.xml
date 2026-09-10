@@ -108,11 +108,20 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <configuration>
                         <!-- datafilter adds hibernate's filter annotations to entity classes at
-                             startup using reflection on java.lang.Class, which the module system
-                             denies from jdk 9 onwards unless java.lang is opened. A server running
-                             datafilter needs the same flag, see the Requirements section of the
-                             README. Without it every context sensitive test here fails with
-                             InaccessibleObjectException from Util.addAnnotationToClass. -->
+                             startup using reflection on java.lang.Class and java.lang.reflect.Field,
+                             which the module system denies from jdk 9 onwards unless those packages
+                             are opened; without these flags it fails with an
+                             InaccessibleObjectException out of Util.addAnnotationToClass. A server
+                             running datafilter needs them too, see the Requirements section of the
+                             README.
+
+                             They are necessary but not sufficient for AllowedLocationFilterTest,
+                             which is context sensitive: on this platform version it also needs a
+                             datafilter newer than 2.2.0, whose FullTextQueryCreatedEventListener
+                             references classes core 2.8 removed, and even then datafilter's own
+                             BaseFilterTest does not get through setup. The rules that test covers
+                             are also covered, without a database, by
+                             AllowedLocationAccessUtilTest. -->
                         <argLine>--add-opens java.base/java.lang=ALL-UNNAMED
                             --add-opens java.base/java.lang.reflect=ALL-UNNAMED</argLine>
                     </configuration>

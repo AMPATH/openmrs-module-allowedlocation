@@ -21,11 +21,13 @@ a user property here would let the filter and the interceptor disagree.
 
 ## How it works
 
+- `AllowedLocationAccessUtil.getAccessibleLocations()` resolves the authenticated user's
+  `allowed_location` user property (comma separated location uuids or names) to a set of
+  location ids, including their descendants unless configured not to. This is the module's
+  reusable entry point, see [Reusing this from another module](#reusing-this-from-another-module).
 - `AllowedLocationFilterListener` is a `DataFilterListener`, discovered by Data Filter across
   every module's classpath the same way it discovers its own built-in listeners. On each
-  session it resolves the authenticated user's `allowed_location` user property (comma
-  separated location uuids or names) to a set of location ids, and includes their descendants
-  unless configured not to.
+  session it binds what that util resolved to the filter's parameter.
 - `allowed_location.json` registers a Hibernate filter that restricts `org.openmrs.Location` to
   `location_id IN (:allowedLocationIds)`, picked up by Data Filter's
   `classpath*:/filters/hibernate/*.json` scan without any change to Data Filter itself.
@@ -51,10 +53,62 @@ Global properties, all optional:
 | `allowedlocation.unrestrictedWhenUnset` | `true` | Whether a user with no value for the user property is left unrestricted. Set to `false` once every user has the property, to fail closed instead. |
 | `datafilter_locationFilter.disabled` | `true` (seeded on install) | Belongs to Data Filter, not this module. Kept `true` so Data Filter's basis-map-based location filter doesn't AND against this module's filter. |
 
+## Reusing this from another module
+
+Another module that wants to scope *its* data to the same locations should not read the user
+property again — resolving it twice means two sets of rules and two sets of global properties that
+can disagree. Instead, register a Hibernate filter for your own tables with Data Filter and set its
+parameter from this module:
+
+```java
+@Component("myLocationFilterListener")
+@OpenmrsProfile(modules = { "datafilter:2.2.0 - 2.*" })
+public class MyLocationFilterListener implements DataFilterListener {
+
+    @Override
+    public boolean supports(String filterName) {
+        return "mymodule_locationBasedFilter".equals(filterName);
+    }
+
+    @Override
+    public boolean onEnableFilter(DataFilterContext filterContext) {
+        AllowedLocationAccess access = AllowedLocationAccessUtil.getAccessibleLocations();
+        if (!access.isRestricted()) {
+            return false;
+        }
+
+        filterContext.setParameter("allowedLocationIds", AllowedLocationAccessUtil.asFilterParameter(access));
+
+        return true;
+    }
+}
+```
+
+Two things are worth knowing before you do:
+
+- `isRestricted()` false and an empty set of location ids are different answers. The first means
+  the user is not scoped by location at all and your filter should stay disabled; the second means
+  they are allowed nothing, and `asFilterParameter` turns it into an id that matches no row so the
+  filter fails closed. Never bind an empty collection, it renders as an invalid `IN ()`.
+- Data Filter enables every registered filter on each session and expects a listener to set its
+  parameters, so a registration whose listener is missing leaves an enabled filter with an unset
+  parameter, which Hibernate rejects on the next query. Register the filter and its listener
+  together, in the module that owns the tables being scoped, and gate the listener bean on Data
+  Filter being present rather than on this module.
+
+The billing module's `billing_locationBasedBillingFilter` works exactly this way: it declares the
+filter on its own Hibernate mappings, because Data Filter cannot add filter tags to the mapping
+files a module contributes, and delegates the resolution here.
+
 ## Requirements
 
 - OpenMRS Platform 2.8.9+
 - [Data Filter module](https://github.com/openmrs/openmrs-module-datafilter) 2.2.0+
+- On Java 9 and later, the server needs `--add-opens java.base/java.lang=ALL-UNNAMED` and
+  `--add-opens java.base/java.lang.reflect=ALL-UNNAMED`. Data Filter adds Hibernate's filter
+  annotations to entity classes at startup by reflecting on `java.lang.Class`, which the module
+  system denies without those flags; it fails to start rather than silently skipping the filters.
+  The same flags are set for the tests here, see the surefire configuration in the root `pom.xml`.
 
 ## Building
 
