@@ -1,6 +1,6 @@
 # Allowed Location Module
 
-An [OpenMRS](https://openmrs.org) module that extends the
+An [AMPATH](https://ampathkenya.org) module that extends the
 [Data Filter module](https://github.com/openmrs/openmrs-module-datafilter) to scope
 `org.openmrs.Location` — including the login location picker — to the locations listed in a
 user's `allowed_location` user property, as a lighter-weight alternative to granting per-user
